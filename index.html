@@ -201,6 +201,24 @@
 
         <!-- RIGHT COLUMN: Public Notes & Tributes with Font Size Controls (5 Cols) -->
         <div class="lg:col-span-5 space-y-6">
+            <!-- Notes List with Font Size Adjuster -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-sm font-semibold uppercase tracking-wider text-slate-400">പ്രണാമങ്ങൾ & ഓർമ്മകൾ</h4>
+                    
+                    <!-- Font Size Controls -->
+                    <div class="flex items-center bg-slate-800 border border-slate-700 rounded-lg p-1 space-x-1" title="അക്ഷര വലുപ്പം ക്രമീകരിക്കാൻ">
+                        <button onclick="changeFontSize(-1)" class="w-6 h-6 flex items-center justify-center text-xs font-bold text-slate-300 hover:bg-slate-700 rounded hover:text-amber-400">A-</button>
+                        <button onclick="resetFontSize()" class="px-1.5 text-[10px] font-semibold text-slate-400 hover:bg-slate-700 rounded">Reset</button>
+                        <button onclick="changeFontSize(1)" class="w-6 h-6 flex items-center justify-center text-xs font-bold text-slate-300 hover:bg-slate-700 rounded hover:text-amber-400">A+</button>
+                    </div>
+                </div>
+
+                <div id="notes-list" class="space-y-4 max-h-[600px] overflow-y-auto pr-1">
+                    <!-- Dynamic Notes will be inserted here -->
+                </div>
+            </div>
+
             <!-- Submit Note Card (Public Accessible) -->
             <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
                 <h3 class="text-lg font-semibold text-slate-200 font-malayalam mb-4 flex items-center gap-2">
@@ -234,24 +252,6 @@
                         <span>സബ്‌മിറ്റ് ചെയ്യുക</span>
                     </button>
                 </form>
-            </div>
-
-            <!-- Notes List with Font Size Adjuster -->
-            <div>
-                <div class="flex items-center justify-between mb-4">
-                    <h4 class="text-sm font-semibold uppercase tracking-wider text-slate-400">പ്രണാമങ്ങൾ & ഓർമ്മകൾ</h4>
-                    
-                    <!-- Font Size Controls -->
-                    <div class="flex items-center bg-slate-800 border border-slate-700 rounded-lg p-1 space-x-1" title="അക്ഷര വലുപ്പം ക്രമീകരിക്കാൻ">
-                        <button onclick="changeFontSize(-1)" class="w-6 h-6 flex items-center justify-center text-xs font-bold text-slate-300 hover:bg-slate-700 rounded hover:text-amber-400">A-</button>
-                        <button onclick="resetFontSize()" class="px-1.5 text-[10px] font-semibold text-slate-400 hover:bg-slate-700 rounded">Reset</button>
-                        <button onclick="changeFontSize(1)" class="w-6 h-6 flex items-center justify-center text-xs font-bold text-slate-300 hover:bg-slate-700 rounded hover:text-amber-400">A+</button>
-                    </div>
-                </div>
-
-                <div id="notes-list" class="space-y-4 max-h-[600px] overflow-y-auto pr-1">
-                    <!-- Dynamic Notes will be inserted here -->
-                </div>
             </div>
         </div>
 
@@ -428,28 +428,28 @@
             if (!heroError && heroData?.value) document.getElementById('main-hero-img').src = heroData.value;
         }
 
-        // Expand / collapse notes without truncating very long content.
-        function toggleNoteExpand(id) {
-            const body = document.getElementById(`note-body-${id}`);
-            const mask = document.getElementById(`note-mask-${id}`);
-            const btn = document.getElementById(`note-btn-${id}`);
-            if (!body || !btn) return;
+        // Expand / collapse notes reliably, including notes with database-generated IDs.
+        function toggleNoteExpand(button) {
+            const card = button.closest('article');
+            const body = card ? card.querySelector('[id^="note-body-"]') : null;
+            const mask = card ? card.querySelector('[id^="note-mask-"]') : null;
+            if (!body) return;
 
             const isCollapsed = body.classList.contains('max-h-24');
-
             if (isCollapsed) {
-                // Use no height limit so the complete note is visible, however long it is.
                 body.classList.remove('max-h-24', 'overflow-hidden');
                 body.style.maxHeight = 'none';
                 body.style.overflow = 'visible';
                 if (mask) mask.classList.add('hidden');
-                btn.innerHTML = '<span>കുറച്ച് കാണിക്കുക</span> <i class="fa-solid fa-chevron-up text-[10px]"></i>';
+                button.innerHTML = '<span>കുറച്ച് കാണിക്കുക</span> <i class="fa-solid fa-chevron-up text-[10px]"></i>';
+                button.setAttribute('aria-expanded', 'true');
             } else {
                 body.classList.add('max-h-24', 'overflow-hidden');
                 body.style.maxHeight = '6rem';
                 body.style.overflow = 'hidden';
                 if (mask) mask.classList.remove('hidden');
-                btn.innerHTML = '<span>കൂടുതൽ വായിക്കുക</span> <i class="fa-solid fa-chevron-down text-[10px]"></i>';
+                button.innerHTML = '<span>കൂടുതൽ വായിക്കുക</span> <i class="fa-solid fa-chevron-down text-[10px]"></i>';
+                button.setAttribute('aria-expanded', 'false');
             }
         }
 
@@ -682,7 +682,7 @@
                         </div>
                         <div class="flex items-center justify-between gap-3 mt-2">
                             ${isLongText ? `
-                                <button type="button" onclick="toggleNoteExpand(${JSON.stringify(note.id)})" id="note-btn-${note.id}"
+                                <button type="button" onclick="toggleNoteExpand(this)" id="note-btn-${note.id}" aria-expanded="false"
                                     class="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1 focus:outline-none">
                                     <span>കൂടുതൽ വായിക്കുക</span>
                                     <i class="fa-solid fa-chevron-down text-[10px]"></i>
