@@ -368,8 +368,9 @@
 
         async function removeStoredPhoto(path) {
             if (!path) return;
-            const { error } = await supabaseClient.storage.from(PHOTO_BUCKET).remove([path]);
-            if (error) console.error('Storage photo deletion failed:', error);
+            const { data, error } = await supabaseClient.storage.from(PHOTO_BUCKET).remove([path]);
+            if (error) throw error;
+            return data;
         }
 
         function showDataError(message, error) {
@@ -726,21 +727,49 @@
         async function deleteGalleryPhoto(photoId) {
             if (!isAdminLoggedIn) { alert('ഫോട്ടോ നീക്കം ചെയ്യാൻ അഡ്മിൻ ലോഗിൻ ചെയ്യണം.'); return; }
             if (!confirm('ഈ ഫോട്ടോ ഗാലറിയിൽ നിന്ന് നീക്കം ചെയ്യണോ?')) return;
-            const photo = galleryPhotos.find(item => String(item.id) === String(photoId));
-            const { error } = await supabaseClient.from('gallery_photos').delete().eq('id', photoId);
-            if (error) return showDataError('ഫോട്ടോ നീക്കം ചെയ്യാൻ കഴിഞ്ഞില്ല.', error);
-            if (photo?.storage_path) await removeStoredPhoto(photo.storage_path);
-            await loadCloudData();
+            try {
+                const photo = galleryPhotos.find(item => String(item.id) === String(photoId));
+                const { data, error } = await supabaseClient
+                    .from('gallery_photos').delete().eq('id', photoId).select('id');
+                if (error) throw error;
+                if (!data || data.length === 0) {
+                    throw new Error('ഡാറ്റാബേസിൽ നിന്ന് ഫോട്ടോ നീക്കം ചെയ്തിട്ടില്ല. Supabase Delete Policy / Admin Login പരിശോധിക്കുക.');
+                }
+                if (photo?.storage_path) {
+                    try { await removeStoredPhoto(photo.storage_path); }
+                    catch (storageError) {
+                        console.error('Storage deletion failed:', storageError);
+                        alert('ഗാലറി റെക്കോർഡ് നീക്കി. എന്നാൽ Storage-ലുള്ള യഥാർത്ഥ ഫോട്ടോ നീക്കാനായില്ല: ' + (storageError.message || 'Storage permission error'));
+                    }
+                }
+                await loadCloudData();
+            } catch (error) {
+                showDataError('ഫോട്ടോ നീക്കം ചെയ്യാൻ കഴിഞ്ഞില്ല.', error);
+            }
         }
 
         async function deleteMemoryNote(noteId) {
             if (!isAdminLoggedIn) { alert('കുറിപ്പ് നീക്കം ചെയ്യാൻ അഡ്മിൻ ലോഗിൻ ചെയ്യണം.'); return; }
             if (!confirm('ഈ ഓർമ്മക്കുറിപ്പ് സ്ഥിരമായി നീക്കം ചെയ്യണോ?')) return;
-            const note = memoryNotes.find(item => String(item.id) === String(noteId));
-            const { error } = await supabaseClient.from('memory_notes').delete().eq('id', noteId);
-            if (error) return showDataError('കുറിപ്പ് നീക്കം ചെയ്യാൻ കഴിഞ്ഞില്ല.', error);
-            if (note?.photo_path) await removeStoredPhoto(note.photo_path);
-            await loadCloudData();
+            try {
+                const note = memoryNotes.find(item => String(item.id) === String(noteId));
+                const { data, error } = await supabaseClient
+                    .from('memory_notes').delete().eq('id', noteId).select('id');
+                if (error) throw error;
+                if (!data || data.length === 0) {
+                    throw new Error('ഡാറ്റാബേസിൽ നിന്ന് കുറിപ്പ് നീക്കം ചെയ്തിട്ടില്ല. Supabase Delete Policy / Admin Login പരിശോധിക്കുക.');
+                }
+                if (note?.photo_path) {
+                    try { await removeStoredPhoto(note.photo_path); }
+                    catch (storageError) {
+                        console.error('Storage deletion failed:', storageError);
+                        alert('ഓർമ്മക്കുറിപ്പ് നീക്കി. എന്നാൽ അതിനോടൊപ്പമുള്ള ചിത്രം Storage-ൽ നിന്ന് നീക്കാനായില്ല: ' + (storageError.message || 'Storage permission error'));
+                    }
+                }
+                await loadCloudData();
+            } catch (error) {
+                showDataError('ഓർമ്മക്കുറിപ്പ് നീക്കം ചെയ്യാൻ കഴിഞ്ഞില്ല.', error);
+            }
         }
 
         // Lightbox Popup Controls with next / previous navigation.
