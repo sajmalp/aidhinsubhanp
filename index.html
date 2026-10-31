@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ഓർമ്മകളിലെ സുബ്ഹാന്‍</title>
+    <title>ഓർമ്മകളിലെ ഹാനി</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts for Malayalam and English -->
@@ -133,8 +133,20 @@
 
                     <!-- Touching Tribute Quote -->
                     <blockquote class="text-lg sm:text-xl text-slate-300 italic font-light leading-relaxed px-4">
-                        " കാലമെത്ര മാഞ്ഞാലും നിന്റെ മായാത്ത പുഞ്ചിരിയും, നിന്നെ കുറിച്ചുള്ള ഓര്‍മകളും ഞങ്ങളുടെ ഹൃദയമിടിപ്പുകളിൽ വീണ്ടും വീണ്ടും പ്രതിധ്വനിച്ചുകൊണ്ടിരിക്കും..."
+                        " ജീവിതയാത്രയിൽ നീ നടന്ന വഴികൾ ചെറുതായിരുന്നെങ്കിലും, ഞങ്ങളുടെ ഹൃദയങ്ങളിൽ നീ അവശേഷിപ്പിച്ച സ്നേഹത്തിന്റെ അടയാളങ്ങൾ അനന്തമാണ്...."
                     </blockquote>
+                </div>
+
+                <!-- Simple home-page shortcut buttons -->
+                <div class="mt-8 w-full max-w-xl px-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button type="button" onclick="openMemorialSection('gallery-grid')"
+                        class="w-full rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-malayalam font-semibold text-sm sm:text-base px-5 py-3.5 shadow-lg shadow-amber-900/20 transition-all duration-200 active:scale-[0.98]">
+                        <i class="fa-solid fa-images mr-2"></i> കൂടുതൽ ചിത്രങ്ങൾ കാണാം
+                    </button>
+                    <button type="button" onclick="openMemorialSection('notes-list')"
+                        class="w-full rounded-full bg-rose-500 hover:bg-rose-400 text-white font-malayalam font-semibold text-sm sm:text-base px-5 py-3.5 shadow-lg shadow-rose-900/20 transition-all duration-200 active:scale-[0.98]">
+                        <i class="fa-solid fa-heart mr-2"></i> ഓർമ്മക്കുറിപ്പുകൾ വായിക്കാം
+                    </button>
                 </div>
 
                 <!-- Quick Edit Modal Trigger (Admin Only) -->
@@ -152,7 +164,7 @@
             <!-- Header Banner -->
             <div class="border-b border-slate-800 pb-6 mb-8 text-center sm:text-left">
                 <h2 class="text-2xl sm:text-3xl font-bold text-slate-100 font-malayalam">ചിത്രങ്ങളും ഓർമ്മക്കുറിപ്പുകളും</h2>
-                <p class="text-slate-400 text-sm mt-1">മകന്റെ അപൂർവ്വ നിമിഷങ്ങളും പ്രിയപ്പെട്ടവരുടെ ഓർമ്മകളും പ്രണാമങ്ങളും ഇവിടെ കാണാം.</p>
+                <p class="text-slate-400 text-sm mt-1">മകന്റെ ചിത്രങ്ങളും പ്രിയപ്പെട്ടവരുടെ കുറിപ്പുകളും ഇവിടെ കാണാം.</p>
             </div>
 
             <!-- Two Column Layout -->
@@ -204,7 +216,7 @@
             <!-- Notes List with Font Size Adjuster -->
             <div>
                 <div class="flex items-center justify-between mb-4">
-                    <h4 class="text-sm font-semibold uppercase tracking-wider text-slate-400">പ്രണാമങ്ങൾ & ഓർമ്മകൾ</h4>
+                    <h4 class="text-sm font-semibold uppercase tracking-wider text-slate-400">ഓർമ്മക്കുറിപ്പുകള്‍ </h4>
                     
                     <!-- Font Size Controls -->
                     <div class="flex items-center bg-slate-800 border border-slate-700 rounded-lg p-1 space-x-1" title="അക്ഷര വലുപ്പം ക്രമീകരിക്കാൻ">
@@ -223,7 +235,7 @@
             <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
                 <h3 class="text-lg font-semibold text-slate-200 font-malayalam mb-4 flex items-center gap-2">
                     <i class="fa-solid fa-pen text-amber-400"></i>
-                    <span>ഓർമ്മക്കുറിപ്പ് പങ്കുവെക്കാം (എല്ലാവർക്കും)</span>
+                    <span>ഓർമ്മക്കുറിപ്പ് പങ്കുവെക്കാം</span>
                 </h3>
 
                 <form id="note-form" onsubmit="handleNoteSubmit(event)" class="space-y-4">
@@ -233,7 +245,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">ബന്ധം / കുറിപ്പ് വിഷയം</label>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">ബന്ധം </label>
                         <input type="text" id="note-relation" placeholder="ഉദാഹരണത്തിന്: കുടുംബ സുഹൃത്ത് / അധ്യാപകൻ" class="w-full bg-slate-900/80 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-amber-400">
                     </div>
 
@@ -327,7 +339,7 @@
 
     <!-- Footer -->
     <footer class="border-t border-slate-800 py-6 text-center text-xs text-slate-500 font-malayalam">
-        <p>എന്നും ഞങ്ങളുടെ ഹൃദയങ്ങളിൽ ജീവിക്കുന്ന പ്രിയ മകന് സമർപ്പിക്കുന്നു 🕊️</p>
+        <p>Dedicated to our beloved son, who lives in our hearts forever. </p>
     </footer>
 
     <!-- Supabase client -->
@@ -376,6 +388,16 @@
         function showDataError(message, error) {
             console.error(message, error);
             alert(message + (error?.message ? `\n${error.message}` : ''));
+        }
+
+        // Home-page shortcut buttons: open the combined gallery / memories page
+        // and scroll directly to the selected section.
+        function openMemorialSection(sectionId) {
+            switchTab('gallery');
+            window.setTimeout(() => {
+                const target = document.getElementById(sectionId);
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 120);
         }
 
         // Tab Switching Logic
@@ -703,34 +725,34 @@
             const notesContainer = document.getElementById('notes-list');
 
             if (memoryNotes.length === 0) {
-                notesContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-4">കുറിപ്പുകൾ ഒന്നും ലഭിച്ചിട്ടില്ല.</p>';
+                notesContainer.innerHTML = '<p class="text-slate-600 text-sm text-center py-4">കുറിപ്പുകൾ ഒന്നും ലഭിച്ചിട്ടില്ല.</p>';
                 return;
             }
 
             notesContainer.innerHTML = memoryNotes.map(note => {
                 const isLongText = (note.content || '').length > 180;
                 return `
-                    <article id="note-card-${note.id}" class="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4 font-malayalam">
+                    <article id="note-card-${note.id}" class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm font-malayalam">
                         <div class="flex justify-between items-start gap-3 mb-2">
                             <div class="min-w-0">
-                                <h5 class="font-semibold text-slate-200 text-sm">${escapeHTML(note.author)}</h5>
-                                <span class="text-xs text-amber-400/80">${escapeHTML(note.relation)}</span>
+                                <h5 class="font-semibold text-black text-sm">${escapeHTML(note.author)}</h5>
+                                <span class="text-xs text-slate-600">${escapeHTML(note.relation)}</span>
                             </div>
-                            <span class="shrink-0 text-[10px] text-slate-500 font-sans">${escapeHTML(note.date)}</span>
+                            <span class="shrink-0 text-[10px] text-slate-600 font-sans">${escapeHTML(note.date)}</span>
                         </div>
                         <div id="note-body-${note.id}" class="relative ${isLongText ? 'max-h-24 overflow-hidden' : ''}">
-                            <p class="note-text-content text-slate-300 text-sm leading-relaxed whitespace-pre-line" style="font-size: ${currentFontSizeRem}rem;">${escapeHTML(note.content)}</p>
+                            <p class="note-text-content text-black text-sm leading-relaxed whitespace-pre-line" style="font-size: ${currentFontSizeRem}rem;">${escapeHTML(note.content)}</p>
                             ${note.photo ? `
-                                <div class="mt-3 rounded-lg overflow-hidden border border-slate-700 max-h-48 flex items-center justify-center bg-slate-900 cursor-pointer" onclick="openLightbox('${note.photo}')">
+                                <div class="mt-3 rounded-lg overflow-hidden border border-slate-200 max-h-48 flex items-center justify-center bg-slate-50 cursor-pointer" onclick="openLightbox('${note.photo}')">
                                     <img src="${note.photo}" alt="ഓർമ്മക്കുറിപ്പിനൊപ്പം ചേർത്ത ചിത്രം" class="max-w-full max-h-48 object-contain">
                                 </div>
                             ` : ''}
-                            ${isLongText ? `<div id="note-mask-${note.id}" class="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent pointer-events-none"></div>` : ''}
+                            ${isLongText ? `<div id="note-mask-${note.id}" class="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none"></div>` : ''}
                         </div>
                         <div class="flex items-center justify-between gap-3 mt-2">
                             ${isLongText ? `
                                 <button type="button" onclick="toggleNoteExpand(this)" id="note-btn-${note.id}" aria-expanded="false"
-                                    class="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1 focus:outline-none">
+                                    class="text-xs font-semibold text-blue-700 hover:text-blue-900 flex items-center gap-1 focus:outline-none">
                                     <span>കൂടുതൽ വായിക്കുക</span>
                                     <i class="fa-solid fa-chevron-down text-[10px]"></i>
                                 </button>
