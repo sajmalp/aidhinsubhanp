@@ -292,7 +292,8 @@
             <h3 class="text-base font-bold text-slate-100 mb-1 font-malayalam">അഡ്മിൻ പ്രവേശനം</h3>
             <p class="text-xs text-slate-400 mb-4">ഫോട്ടോകൾ അപ്‌ലോഡ് ചെയ്യുന്നതിനും തിരുത്തുന്നതിനുമായി പാസ്‌വേഡ് ടൈപ്പ് ചെയ്യുക.</p>
             
-            <input type="password" id="admin-pin-input" placeholder="പാസ്‌വേഡ് നൽകുക (Default: 1234)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-center text-slate-100 text-sm tracking-widest mb-4 focus:outline-none focus:border-amber-400">
+            <input type="email" id="admin-email-input" autocomplete="username" placeholder="അഡ്മിൻ ഇമെയിൽ" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 text-sm mb-2 focus:outline-none focus:border-amber-400">
+            <input type="password" id="admin-pin-input" autocomplete="current-password" placeholder="പാസ്‌വേഡ്" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-center text-slate-100 text-sm tracking-widest mb-4 focus:outline-none focus:border-amber-400">
             
             <div id="pin-error" class="text-xs text-rose-400 hidden mb-3">തെറ്റായ പാസ്‌വേഡ്! വീണ്ടും ശ്രമിക്കുക.</div>
 
@@ -329,16 +330,52 @@
         <p>എന്നും ഞങ്ങളുടെ ഹൃദയങ്ങളിൽ ജീവിക്കുന്ന പ്രിയ മകന് സമർപ്പിക്കുന്നു 🕊️</p>
     </footer>
 
+    <!-- Supabase client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <!-- JavaScript Application Logic -->
     <script>
         // Security Settings & Global State
-        const ADMIN_PIN = "1234";
+        // Supabase connection. The publishable key is intended for browser use.
+        const SUPABASE_URL = 'https://tnpejjlysojpqclssyit.supabase.co';
+        const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_mzlu9_pbO9c3IOmEySf5ug_kPQT-Zi3';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+        const PHOTO_BUCKET = 'memorial-photos';
         let isAdminLoggedIn = false;
         let currentFontSizeRem = 0.875;
+        let galleryPhotos = [];
+        let memoryNotes = [];
 
-        // Persistent Data Stores
-        let galleryPhotos = JSON.parse(localStorage.getItem('memorial_gallery')) || [];
-        let memoryNotes = JSON.parse(localStorage.getItem('memorial_notes')) || [];
+        function dataUrlToBlob(dataUrl) {
+            const parts = dataUrl.split(',');
+            const mime = (parts[0].match(/:(.*?);/) || [])[1] || 'image/jpeg';
+            const binary = atob(parts[1]);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            return new Blob([bytes], { type: mime });
+        }
+
+        async function uploadPhoto(dataUrl, folder) {
+            const blob = dataUrlToBlob(dataUrl);
+            const path = `${folder}/${Date.now()}-${crypto.randomUUID()}.jpg`;
+            const { error } = await supabaseClient.storage.from(PHOTO_BUCKET).upload(path, blob, {
+                contentType: 'image/jpeg', upsert: false
+            });
+            if (error) throw error;
+            const { data } = supabaseClient.storage.from(PHOTO_BUCKET).getPublicUrl(path);
+            return { url: data.publicUrl, path };
+        }
+
+        async function removeStoredPhoto(path) {
+            if (!path) return;
+            const { error } = await supabaseClient.storage.from(PHOTO_BUCKET).remove([path]);
+            if (error) console.error('Storage photo deletion failed:', error);
+        }
+
+        function showDataError(message, error) {
+            console.error(message, error);
+            alert(message + (error?.message ? `\n${error.message}` : ''));
+        }
 
         // Tab Switching Logic
         function switchTab(tabName) {
@@ -361,57 +398,34 @@
         }
 
         // Initialize Application State on Page Load
-        window.onload = function() {
+        window.addEventListener('load', async function() {
             loadSavedDetails();
             renderGallery();
             renderNotes();
             updateAdminUI();
-        };
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            isAdminLoggedIn = !!session;
+            updateAdminUI();
+            await loadCloudData();
+            supabaseClient.auth.onAuthStateChange((_event, sessionNow) => {
+                isAdminLoggedIn = !!sessionNow;
+                updateAdminUI();
+            });
+        });
 
-        // Render Notes List with Compact Expandable Cards
-        function renderNotes() {
-            const notesContainer = document.getElementById('notes-list');
-            
-            if (memoryNotes.length === 0) {
-                notesContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-4">കുറിപ്പുകൾ ഒന്നും ലഭിച്ചിട്ടില്ല.</p>';
-                return;
-            }
-
-            notesContainer.innerHTML = memoryNotes.map(note => {
-                const isLongText = note.content.length > 180 || note.photo;
-                return `
-                <div id="note-card-${note.id}" class="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4 transition-all duration-300 font-malayalam relative">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <h5 class="font-semibold text-slate-200 text-sm">${note.author}</h5>
-                            <span class="text-xs text-amber-400/80">${note.relation}</span>
-                        </div>
-                        <span class="text-[10px] text-slate-500 font-sans">${note.date}</span>
-                    </div>
-
-                    <!-- Expandable Note Container -->
-                    <div id="note-body-${note.id}" class="relative overflow-hidden transition-all duration-500 ${isLongText ? 'max-h-24' : 'max-h-none'}">
-                        <p class="note-text-content text-slate-300 leading-relaxed whitespace-pre-line" style="font-size: ${currentFontSizeRem}rem;">${note.content}</p>
-                        ${note.photo ? `
-                            <div class="mt-3 rounded-lg overflow-hidden border border-slate-700 max-h-48 flex items-center justify-center bg-slate-900 cursor-pointer" onclick="openLightbox('${note.photo}')">
-                                <img src="${note.photo}" class="w-full h-full object-cover object-center">
-                            </div>
-                        ` : ''}
-                        
-                        <!-- Gradient Blur Mask for Collapsed State -->
-                        ${isLongText ? `<div id="note-mask-${note.id}" class="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent pointer-events-none"></div>` : ''}
-                    </div>
-
-                    <!-- Read More Toggle Button -->
-                    ${isLongText ? `
-                        <button onclick="toggleNoteExpand(${note.id})" id="note-btn-${note.id}" class="mt-2 text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1 focus:outline-none">
-                            <span>കൂടുതൽ വായിക്കുക</span>
-                            <i class="fa-solid fa-chevron-down text-[10px]"></i>
-                        </button>
-                    ` : ''}
-                </div>
-            `;
-            }).join('');
+        async function loadCloudData() {
+            const [photosResult, notesResult] = await Promise.all([
+                supabaseClient.from('gallery_photos').select('*').order('created_at', { ascending: false }),
+                supabaseClient.from('memory_notes').select('*').order('created_at', { ascending: false })
+            ]);
+            if (photosResult.error) return showDataError('ഫോട്ടോ ഗാലറി ലോഡ് ചെയ്യാൻ കഴിഞ്ഞില്ല.', photosResult.error);
+            if (notesResult.error) return showDataError('ഓർമ്മക്കുറിപ്പുകൾ ലോഡ് ചെയ്യാൻ കഴിഞ്ഞില്ല.', notesResult.error);
+            galleryPhotos = (photosResult.data || []).map(row => ({ id: row.id, url: row.photo_url, storage_path: row.storage_path }));
+            memoryNotes = (notesResult.data || []).map(row => ({ id: row.id, author: row.author, relation: row.relation, content: row.content, photo: row.photo_url, photo_path: row.photo_path, date: row.display_date }));
+            renderGallery();
+            renderNotes();
+            const { data: heroData, error: heroError } = await supabaseClient.from('site_settings').select('value').eq('key', 'hero_photo').maybeSingle();
+            if (!heroError && heroData?.value) document.getElementById('main-hero-img').src = heroData.value;
         }
 
         // Expand / collapse notes without truncating very long content.
@@ -442,11 +456,11 @@
         // --- Admin Lock & Security Handlers ---
         function handleAdminToggle() {
             if (isAdminLoggedIn) {
-                // Logout
-                isAdminLoggedIn = false;
-                updateAdminUI();
+                supabaseClient.auth.signOut().then(({ error }) => {
+                    if (error) showDataError('ലോഗ് ഔട്ട് ചെയ്യാൻ കഴിഞ്ഞില്ല.', error);
+                });
             } else {
-                // Open PIN Modal
+                document.getElementById('admin-email-input').value = '';
                 document.getElementById('admin-pin-input').value = '';
                 document.getElementById('pin-error').classList.add('hidden');
                 document.getElementById('admin-pass-modal').classList.remove('hidden');
@@ -459,15 +473,16 @@
             document.getElementById('admin-pass-modal').classList.remove('flex');
         }
 
-        function verifyAdminPin() {
-            const inputPin = document.getElementById('admin-pin-input').value;
-            if (inputPin === ADMIN_PIN) {
-                isAdminLoggedIn = true;
-                closeAdminModal();
-                updateAdminUI();
-            } else {
-                document.getElementById('pin-error').classList.remove('hidden');
-            }
+        async function verifyAdminPin() {
+            const email = document.getElementById('admin-email-input').value.trim();
+            const password = document.getElementById('admin-pin-input').value;
+            const errorBox = document.getElementById('pin-error');
+            if (!email || !password) { errorBox.textContent = 'ഇമെയിലും പാസ്‌വേഡും നൽകുക.'; errorBox.classList.remove('hidden'); return; }
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) { errorBox.textContent = 'ലോഗിൻ പരാജയപ്പെട്ടു. വിവരങ്ങൾ പരിശോധിക്കുക.'; errorBox.classList.remove('hidden'); return; }
+            isAdminLoggedIn = true;
+            closeAdminModal();
+            updateAdminUI();
         }
 
         function updateAdminUI() {
@@ -539,11 +554,14 @@
             if (file) {
                 try {
                     const compressedImage = await compressImage(file, 1000, 0.9);
-                    const heroImg = document.getElementById('main-hero-img');
-                    heroImg.src = compressedImage;
-                    localStorage.setItem('memorial_hero_photo', compressedImage);
+                    const uploaded = await uploadPhoto(compressedImage, 'hero');
+                    const { error } = await supabaseClient.from('site_settings').upsert({ key: 'hero_photo', value: uploaded.url });
+                    if (error) throw error;
+                    document.getElementById('main-hero-img').src = uploaded.url;
                 } catch(err) {
-                    console.error("Error processing hero image:", err);
+                    showDataError('പ്രധാന ചിത്രം അപ്‌ലോഡ് ചെയ്യാൻ കഴിഞ്ഞില്ല.', err);
+                } finally {
+                    event.target.value = '';
                 }
             }
         }
@@ -553,20 +571,18 @@
             if (!isAdminLoggedIn) return;
             const files = Array.from(event.target.files);
             if (!files.length) return;
-
-            for (let file of files) {
-                try {
+            const input = event.target;
+            input.disabled = true;
+            try {
+                for (const file of files) {
                     const compressedImage = await compressImage(file, 1200, 0.85);
-                    galleryPhotos.unshift({
-                        id: Date.now() + Math.random(),
-                        url: compressedImage
-                    });
-                } catch (err) {
-                    console.error("Error compressing image:", err);
+                    const uploaded = await uploadPhoto(compressedImage, 'gallery');
+                    const { error } = await supabaseClient.from('gallery_photos').insert({ photo_url: uploaded.url, storage_path: uploaded.path });
+                    if (error) { await removeStoredPhoto(uploaded.path); throw error; }
                 }
-            }
-            saveAndRenderGallery();
-            event.target.value = ''; // Reset input
+                await loadCloudData();
+            } catch (err) { showDataError('ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യാൻ കഴിഞ്ഞില്ല.', err); }
+            finally { input.disabled = false; input.value = ''; }
         }
 
         // Render Gallery Grid with Centered Image Display Cards
@@ -601,49 +617,38 @@
             `).join('');
         }
 
-        function saveAndRenderGallery() {
-            try {
-                localStorage.setItem('memorial_gallery', JSON.stringify(galleryPhotos));
-            } catch(e) {
-                console.warn('Storage limit reached for local storage images');
-            }
-            renderGallery();
-        }
+        function saveAndRenderGallery() { renderGallery(); }
 
         // Handle Public Notes Submission
         async function handleNoteSubmit(event) {
             event.preventDefault();
-            const author = document.getElementById('note-author').value;
-            const relation = document.getElementById('note-relation').value;
-            const content = document.getElementById('note-content').value;
+            const author = document.getElementById('note-author').value.trim();
+            const relation = document.getElementById('note-relation').value.trim() || 'പ്രിയപ്പെട്ടവർ';
+            const content = document.getElementById('note-content').value.trim();
             const photoInput = document.getElementById('note-photo-input');
             const file = photoInput.files[0];
-
-            let photoUrl = null;
-            if (file) {
-                try {
-                    photoUrl = await compressImage(file, 800, 0.8);
-                } catch(e) {
-                    console.error("Error attached note image", e);
-                }
-            }
-
-            const newNote = {
-                id: Date.now(),
-                author,
-                relation: relation || 'പ്രിയപ്പെട്ടവർ',
-                content,
-                photo: photoUrl,
-                date: new Date().toLocaleDateString('ml-IN', { year: 'numeric', month: 'long', day: 'numeric' })
-            };
-
-            memoryNotes.unshift(newNote);
+            if (!author || !content) return;
+            let photoUrl = null, photoPath = null;
             try {
-                localStorage.setItem('memorial_notes', JSON.stringify(memoryNotes));
-            } catch(e) {}
-            
-            renderNotes();
-            document.getElementById('note-form').reset();
+                if (file) {
+                    const compressed = await compressImage(file, 800, 0.8);
+                    const uploaded = await uploadPhoto(compressed, 'notes');
+                    photoUrl = uploaded.url; photoPath = uploaded.path;
+                }
+                const displayDate = new Date().toLocaleDateString('ml-IN', { year: 'numeric', month: 'long', day: 'numeric' });
+                const { error } = await supabaseClient.from('memory_notes').insert({ author, relation, content, photo_url: photoUrl, photo_path: photoPath, display_date: displayDate });
+                if (error) { if (photoPath) await removeStoredPhoto(photoPath); throw error; }
+                await loadCloudData();
+                document.getElementById('note-form').reset();
+                alert('നിങ്ങളുടെ ഓർമ്മക്കുറിപ്പ് സമർപ്പിച്ചു. നന്ദി.');
+            } catch (err) { showDataError('ഓർമ്മക്കുറിപ്പ് സമർപ്പിക്കാൻ കഴിഞ്ഞില്ല.', err); }
+        }
+
+        // Escape visitor-submitted text before inserting it into HTML.
+        function escapeHTML(value) {
+            return String(value ?? '').replace(/[&<>\"']/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#39;'
+            })[ch]);
         }
 
         // Render Notes List
@@ -661,13 +666,13 @@
                     <article id="note-card-${note.id}" class="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4 font-malayalam">
                         <div class="flex justify-between items-start gap-3 mb-2">
                             <div class="min-w-0">
-                                <h5 class="font-semibold text-slate-200 text-sm">${note.author || ''}</h5>
-                                <span class="text-xs text-amber-400/80">${note.relation || ''}</span>
+                                <h5 class="font-semibold text-slate-200 text-sm">${escapeHTML(note.author)}</h5>
+                                <span class="text-xs text-amber-400/80">${escapeHTML(note.relation)}</span>
                             </div>
-                            <span class="shrink-0 text-[10px] text-slate-500 font-sans">${note.date || ''}</span>
+                            <span class="shrink-0 text-[10px] text-slate-500 font-sans">${escapeHTML(note.date)}</span>
                         </div>
                         <div id="note-body-${note.id}" class="relative ${isLongText ? 'max-h-24 overflow-hidden' : ''}">
-                            <p class="note-text-content text-slate-300 text-sm leading-relaxed whitespace-pre-line" style="font-size: ${currentFontSizeRem}rem;">${note.content || ''}</p>
+                            <p class="note-text-content text-slate-300 text-sm leading-relaxed whitespace-pre-line" style="font-size: ${currentFontSizeRem}rem;">${escapeHTML(note.content)}</p>
                             ${note.photo ? `
                                 <div class="mt-3 rounded-lg overflow-hidden border border-slate-700 max-h-48 flex items-center justify-center bg-slate-900 cursor-pointer" onclick="openLightbox('${note.photo}')">
                                     <img src="${note.photo}" alt="ഓർമ്മക്കുറിപ്പിനൊപ്പം ചേർത്ത ചിത്രം" class="max-w-full max-h-48 object-contain">
@@ -677,7 +682,7 @@
                         </div>
                         <div class="flex items-center justify-between gap-3 mt-2">
                             ${isLongText ? `
-                                <button type="button" onclick="toggleNoteExpand(${note.id})" id="note-btn-${note.id}"
+                                <button type="button" onclick="toggleNoteExpand(${JSON.stringify(note.id)})" id="note-btn-${note.id}"
                                     class="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1 focus:outline-none">
                                     <span>കൂടുതൽ വായിക്കുക</span>
                                     <i class="fa-solid fa-chevron-down text-[10px]"></i>
@@ -717,34 +722,25 @@
             });
         }
 
-        // Admin-only deletion handlers.
-        function deleteGalleryPhoto(photoId) {
-            if (!isAdminLoggedIn) {
-                alert('ഫോട്ടോ നീക്കം ചെയ്യാൻ അഡ്മിൻ ലോഗിൻ ചെയ്യണം.');
-                return;
-            }
-
+        // Admin-only deletion handlers backed by Supabase.
+        async function deleteGalleryPhoto(photoId) {
+            if (!isAdminLoggedIn) { alert('ഫോട്ടോ നീക്കം ചെയ്യാൻ അഡ്മിൻ ലോഗിൻ ചെയ്യണം.'); return; }
             if (!confirm('ഈ ഫോട്ടോ ഗാലറിയിൽ നിന്ന് നീക്കം ചെയ്യണോ?')) return;
-
-            galleryPhotos = galleryPhotos.filter(photo => String(photo.id) !== String(photoId));
-            saveAndRenderGallery();
+            const photo = galleryPhotos.find(item => String(item.id) === String(photoId));
+            const { error } = await supabaseClient.from('gallery_photos').delete().eq('id', photoId);
+            if (error) return showDataError('ഫോട്ടോ നീക്കം ചെയ്യാൻ കഴിഞ്ഞില്ല.', error);
+            if (photo?.storage_path) await removeStoredPhoto(photo.storage_path);
+            await loadCloudData();
         }
 
-        function deleteMemoryNote(noteId) {
-            if (!isAdminLoggedIn) {
-                alert('കുറിപ്പ് നീക്കം ചെയ്യാൻ അഡ്മിൻ ലോഗിൻ ചെയ്യണം.');
-                return;
-            }
-
+        async function deleteMemoryNote(noteId) {
+            if (!isAdminLoggedIn) { alert('കുറിപ്പ് നീക്കം ചെയ്യാൻ അഡ്മിൻ ലോഗിൻ ചെയ്യണം.'); return; }
             if (!confirm('ഈ ഓർമ്മക്കുറിപ്പ് സ്ഥിരമായി നീക്കം ചെയ്യണോ?')) return;
-
-            memoryNotes = memoryNotes.filter(note => String(note.id) !== String(noteId));
-            try {
-                localStorage.setItem('memorial_notes', JSON.stringify(memoryNotes));
-            } catch (error) {
-                console.error('Could not update saved notes:', error);
-            }
-            renderNotes();
+            const note = memoryNotes.find(item => String(item.id) === String(noteId));
+            const { error } = await supabaseClient.from('memory_notes').delete().eq('id', noteId);
+            if (error) return showDataError('കുറിപ്പ് നീക്കം ചെയ്യാൻ കഴിഞ്ഞില്ല.', error);
+            if (note?.photo_path) await removeStoredPhoto(note.photo_path);
+            await loadCloudData();
         }
 
         // Lightbox Popup Controls with next / previous navigation.
@@ -839,11 +835,9 @@
         function loadSavedDetails() {
             const savedName = localStorage.getItem('memorial_son_name');
             const savedDates = localStorage.getItem('memorial_son_dates');
-            const savedHero = localStorage.getItem('memorial_hero_photo');
 
             if (savedName) document.getElementById('display-name').textContent = savedName;
             if (savedDates) document.getElementById('display-dates').textContent = savedDates;
-            if (savedHero) document.getElementById('main-hero-img').src = savedHero;
         }
     </script>
 </body>
