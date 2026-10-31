@@ -400,6 +400,7 @@
 
         // Initialize Application State on Page Load
         window.addEventListener('load', async function() {
+            installDeleteButtonHandlers();
             loadSavedDetails();
             renderGallery();
             renderNotes();
@@ -608,7 +609,7 @@
                         <i class="fa-solid fa-expand text-amber-400 text-lg"></i>
                     </div>
                     ${isAdminLoggedIn ? `
-                        <button type="button" onclick="event.stopPropagation(); deleteGalleryPhoto(${JSON.stringify(photo.id)})"
+                        <button type="button" data-delete-gallery="${escapeHTML(photo.id)}"
                             title="ഫോട്ടോ നീക്കം ചെയ്യുക" aria-label="ഫോട്ടോ നീക്കം ചെയ്യുക"
                             class="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-rose-600/95 text-white hover:bg-rose-500 shadow-lg flex items-center justify-center">
                             <i class="fa-solid fa-trash-can text-xs"></i>
@@ -690,7 +691,7 @@
                                 </button>
                             ` : '<span></span>'}
                             ${isAdminLoggedIn ? `
-                                <button type="button" onclick="deleteMemoryNote(${JSON.stringify(note.id)})"
+                                <button type="button" data-delete-note="${escapeHTML(note.id)}"
                                     class="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1">
                                     <i class="fa-solid fa-trash-can"></i> നീക്കം ചെയ്യുക
                                 </button>
@@ -771,6 +772,40 @@
                 showDataError('ഓർമ്മക്കുറിപ്പ് നീക്കം ചെയ്യാൻ കഴിഞ്ഞില്ല.', error);
             }
         }
+
+        // Use delegated event handlers instead of inline onclick attributes.
+        // Capture phase prevents the gallery card's lightbox click from firing
+        // when the admin clicks its delete button.
+        function installDeleteButtonHandlers() {
+            const galleryGrid = document.getElementById('gallery-grid');
+            const notesList = document.getElementById('notes-list');
+
+            if (galleryGrid && !galleryGrid.dataset.deleteHandlerReady) {
+                galleryGrid.dataset.deleteHandlerReady = 'true';
+                galleryGrid.addEventListener('click', function(event) {
+                    const button = event.target.closest('[data-delete-gallery]');
+                    if (!button) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    deleteGalleryPhoto(button.getAttribute('data-delete-gallery'));
+                }, true);
+            }
+
+            if (notesList && !notesList.dataset.deleteHandlerReady) {
+                notesList.dataset.deleteHandlerReady = 'true';
+                notesList.addEventListener('click', function(event) {
+                    const button = event.target.closest('[data-delete-note]');
+                    if (!button) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    deleteMemoryNote(button.getAttribute('data-delete-note'));
+                }, true);
+            }
+        }
+
+        // Expose handlers for browser diagnostics and compatibility.
+        window.deleteGalleryPhoto = deleteGalleryPhoto;
+        window.deleteMemoryNote = deleteMemoryNote;
 
         // Lightbox Popup Controls with next / previous navigation.
         let lightboxImages = [];
