@@ -4,38 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ഓർമ്മകളിലെ ഹാനി</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts for Malayalam and English -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Noto+Serif+Malayalam:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Self-hosted compiled Tailwind CSS: no Tailwind CDN dependency -->
+    <link rel="stylesheet" href="./styles.css">
     
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Manrope', 'sans-serif'],
-                        malayalam: ['Noto Serif Malayalam', 'serif'],
-                    },
-                    colors: {
-                        memorial: {
-                            50: '#f8fafc',
-                            100: '#f1f5f9',
-                            800: '#1e293b',
-                            900: '#0f172a',
-                            gold: '#d4af37',
-                            goldHover: '#b89628',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
+<style>
         body {
             font-family: 'Manrope', 'Noto Serif Malayalam', serif;
             background-color: #0f172a;
@@ -735,7 +713,7 @@
                     <article id="note-card-${note.id}" class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm font-malayalam">
                         <div class="flex justify-between items-start gap-3 mb-2">
                             <div class="min-w-0">
-                                <h5 class="font-semibold text-black text-sm">${escapeHTML(note.author)}</h5>
+                                <h5 class="font-extrabold text-black text-lg">${escapeHTML(note.author)}</h5>
                                 <span class="text-xs text-slate-600">${escapeHTML(note.relation)}</span>
                             </div>
                             <span class="shrink-0 text-[10px] text-slate-600 font-sans">${escapeHTML(note.date)}</span>
