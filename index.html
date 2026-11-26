@@ -501,7 +501,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #fbbf24;outline-offse
                             <select id="gallery-category-select" class="w-full rounded-lg bg-slate-900 border border-slate-600 text-slate-200 px-3 py-3 text-sm focus:outline-none focus:border-amber-400">
                                 <option value="solo">അവന്റെ മാത്രം ചിത്രങ്ങൾ</option>
                                 <option value="family">കുടുംബത്തോടൊപ്പം</option>
-                                <option value="other" selected>മറ്റുള്ളവ (സ്കൂൾ, മദ്രസ്സ, സുഹൃത്തുക്കൾ)</option>
+                                <option value="other" selected>സ്കൂൾ, മദ്രസ്സ, സുഹൃത്തുക്കൾ</option>
                             </select>
                         </div>
                         <div class="border-2 border-dashed border-slate-600 hover:border-amber-400/60 rounded-xl p-6 text-center transition duration-300 bg-slate-900/40 cursor-pointer relative" onclick="document.getElementById('gallery-upload-input').click()">
@@ -697,7 +697,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #fbbf24;outline-offse
         const GALLERY_CATEGORIES = {
             solo: { title: 'അവന്റെ മാത്രം ചിത്രങ്ങൾ', subtitle: 'അവൻ ഒറ്റയ്ക്കുള്ള ചിത്രങ്ങൾ', icon: 'fa-user' },
             family: { title: 'കുടുംബത്തോടൊപ്പം', subtitle: 'കുടുംബത്തിന്റെ പ്രിയപ്പെട്ട നിമിഷങ്ങൾ', icon: 'fa-people-group' },
-            other: { title: 'മറ്റുള്ളവ', subtitle: 'സ്കൂൾ, മദ്രസ്സ, സുഹൃത്തുക്കൾ', icon: 'fa-school' }
+            other: { title: 'സ്കൂൾ, മദ്രസ്സ', subtitle: ' സുഹൃത്തുക്കൾ', icon: 'fa-school' }
         };
 
         function dataUrlToBlob(dataUrl) {
@@ -1236,7 +1236,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #fbbf24;outline-offse
                         <select aria-label="ഫോട്ടോ വിഭാഗം മാറ്റുക" onclick="event.stopPropagation()" onchange="updatePhotoCategory('${escapeHTML(photo.id)}', this.value)" class="absolute bottom-2 left-2 right-2 z-10 w-[calc(100%-1rem)] rounded-md bg-slate-950/95 text-white text-[10px] p-1 border border-slate-600">
                             <option value="solo" ${photo.category === 'solo' ? 'selected' : ''}>അവന്റെ മാത്രം</option>
                             <option value="family" ${photo.category === 'family' ? 'selected' : ''}>കുടുംബം</option>
-                            <option value="other" ${photo.category === 'other' ? 'selected' : ''}>മറ്റുള്ളവ</option>
+                            <option value="other" ${photo.category === 'other' ? 'selected' : ''}>സ്കൂൾ, മദ്രസ്സ</option>
                         </select>
                         <button type="button" data-delete-gallery="${escapeHTML(photo.id)}" title="ഫോട്ടോ നീക്കം ചെയ്യുക" aria-label="ഫോട്ടോ നീക്കം ചെയ്യുക" class="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-rose-600/95 text-white hover:bg-rose-500 shadow-lg flex items-center justify-center"><i class="fa-solid fa-trash-can text-xs"></i></button>
                     ` : ''}
